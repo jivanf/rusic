@@ -16,5 +16,7 @@
                 </div>
             </div>
         </div>
+
+        <audio id="audio" autoplay></audio>
     </SidebarInset>
 </SidebarProvider>

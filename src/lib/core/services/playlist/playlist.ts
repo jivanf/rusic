@@ -1,31 +1,41 @@
-import { inject } from '$lib/core/di';
-import type { PlaylistOverview } from '$lib/core/services/playlist/playlist.types';
+import { PUBLIC_AUTH_ACCESS_TOKEN } from '$env/static/public';
+import type { Playlist } from '$lib/core/services/playlist/playlist.types';
 import { StatefulService } from '$lib/core/services/stateful-service.svelte';
-import { InnertubeState } from '$lib/core/state/innertube/innertube.ts';
-import type { YTNode } from 'youtubei.js/dist/src/parser/helpers';
+import type { AsyncInitializable } from '$lib/core/di/init.ts';
 
-export class PlaylistService extends StatefulService<PlaylistOverview> {
-    private innertube = inject(InnertubeState).innertube;
+export class PlaylistService extends StatefulService<Playlist> implements AsyncInitializable {
+    private accessToken = PUBLIC_AUTH_ACCESS_TOKEN;
 
-    async read(): Promise<PlaylistOverview[]> {
-        const result = await this.innertube.getPlaylists();
+    init(): Promise<unknown> {
+        return this.read();
+    }
 
-        const playlistNodes: YTNode[] = result.page
-            .contents!.item()
-            .key('content')
-            .node()
-            .key('content')
-            .node()
-            .key('items')
-            .array();
+    async handleRead() {
+        let playlists: Playlist[] = [];
+        let pageToken = null;
 
-        return playlistNodes.map((item) => {
-            const payload = item.key('endpoint').object().payload;
+        do {
+            const url = new URL('https://www.googleapis.com/youtube/v3/playlists');
+            url.searchParams.set('part', 'snippet');
+            url.searchParams.set('mine', 'true');
+            url.searchParams.set('maxResults', '50'); // Maximum allowed
 
-            return {
-                id: payload.contentId,
-                title: payload.title.simpleText,
-            };
-        });
+            if (pageToken) {
+                url.searchParams.set('pageToken', pageToken);
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            });
+
+            const data = await response.json();
+
+            playlists = playlists.concat(data.items);
+            pageToken = data.nextPageToken;
+        } while (pageToken);
+
+        return playlists;
     }
 }
