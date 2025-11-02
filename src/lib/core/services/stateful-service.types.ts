@@ -1,3 +1,3 @@
-export type ServiceState<TModel> = {
-    items: TModel[] | undefined;
+export type ServiceState<TItem> = {
+    items: TItem[];
 };

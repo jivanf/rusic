@@ -1,13 +1,23 @@
 import type { ServiceState } from '$lib/core/services/stateful-service.types';
 
-export abstract class StatefulService<TModel> {
-    private state = $state<ServiceState<TModel>>({
-        items: undefined,
+export abstract class StatefulService<TItem> {
+    private state = $state<ServiceState<TItem>>({
+        items: [],
     });
 
     items = $derived(this.state.items);
 
-    protected setItems(items: TModel[]) {
+    abstract handleRead(): Promise<TItem[]>;
+
+    async read(): Promise<TItem[]> {
+        const items = await this.handleRead();
+
+        this.setItems(items);
+
+        return items;
+    }
+
+    protected setItems(items: TItem[]) {
         this.state.items = items;
     }
 }
