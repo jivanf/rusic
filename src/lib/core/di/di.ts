@@ -14,9 +14,10 @@ export async function provide(providers: Provider<unknown>[]): Promise<void> {
     for (const provider of providers) {
         const provision = getProvision(provider);
 
-        const dependency = container.get(provision);
-
-        if (dependency !== undefined) {
+        // Only the class provider is guaranteed to always provide the same value for the same dependency.
+        // Since the other providers can provide different values for the same dependency, they must not
+        // be skipped.
+        if (container.get(provision) !== undefined && isClassProvider(provider)) {
             continue;
         }
 
