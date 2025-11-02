@@ -1,6 +1,6 @@
 import { inject } from '$lib/core/di';
 import { AuthService } from '$lib/core/services/auth/auth.svelte';
-import type { User } from 'firebase/auth';
+import type { User } from '$lib/core/state/user/user.types.ts';
 
 /**
  * Stores the authenticated user.

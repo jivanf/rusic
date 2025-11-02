@@ -1,12 +1,12 @@
+import { type Auth, GoogleAuthProvider, signInWithCredential, signOut } from 'firebase/auth';
 import { inject } from '$lib/core/di';
-import type { Tokens } from '$lib/core/services/auth/auth.types';
 import { TOKEN_PROVIDER, type TokenProvider } from '$lib/core/services/auth/providers/provider';
-import { StatefulService } from '$lib/core/services/stateful-service.svelte.js';
 import { FirebaseState } from '$lib/core/state/firebase/firebase';
-import { type Auth, GoogleAuthProvider, signInWithCredential, signOut, type User } from 'firebase/auth';
+import type { Tokens } from '$lib/core/services/auth/auth.types';
+import type { User } from '$lib/core/state/user/user.types.ts';
 
-export class AuthService extends StatefulService<User> {
-    user = $derived(this.items?.[0] ?? null);
+export class AuthService {
+    user = $derived<User | null>(null);
 
     authenticated = $derived(this.user !== null);
 
@@ -14,8 +14,6 @@ export class AuthService extends StatefulService<User> {
     private readonly tokenProvider: TokenProvider;
 
     constructor() {
-        super();
-
         this.auth = inject(FirebaseState).auth;
         this.tokenProvider = inject(TOKEN_PROVIDER);
     }
@@ -38,16 +36,18 @@ export class AuthService extends StatefulService<User> {
     async signOut(): Promise<void> {
         await signOut(this.auth);
 
-        this.setItems([]);
+        this.user = null;
     }
 
     private async signInWithTokens(tokens: Tokens): Promise<User> {
         const credential = GoogleAuthProvider.credential(tokens.id_token, tokens.access_token);
 
         return signInWithCredential(this.auth, credential).then((result) => {
-            this.setItems([result.user]);
+            const user = result.user as User;
 
-            return result.user;
+            this.user = user;
+
+            return user;
         });
     }
 }
