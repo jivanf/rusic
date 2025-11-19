@@ -3,8 +3,11 @@ import type { Type } from '$lib/utils/types';
 
 export type Provision<TProvider> = Type<TProvider> | InjectionToken<TProvider>;
 
-export type ValueProvider<TProvider> = {
-    provide: Provision<TProvider>;
+type BaseProvider<TProvider> = {
+    provide: TProvider;
+};
+
+export type ValueProvider<TProvider> = BaseProvider<Provision<TProvider>> & {
     useValue: TProvider;
 };
 
@@ -15,11 +18,10 @@ export function isValueProvider<TProvider>(provider: Provider<TProvider>): provi
 export type ClassProvider<TProvider> = Type<TProvider>;
 
 export function isClassProvider<TProvider>(provider: Provider<TProvider>): provider is ClassProvider<TProvider> {
-    return typeof provider === 'function';
+    return typeof provider === 'function' || (typeof provider === 'object' && 'isClassProvider' in provider);
 }
 
-export type FactoryProvider<TProvider> = {
-    provide: Provision<TProvider>;
+export type FactoryProvider<TProvider> = BaseProvider<Provision<TProvider>> & {
     useFactory: () => TProvider;
 };
 
