@@ -7,4 +7,4 @@ export interface TokenProvider {
     signIn(): Promise<Tokens>;
 }
 
-export const TOKEN_PROVIDER = new InjectionToken<TokenProvider>();
+export const TOKEN_PROVIDER = new InjectionToken<TokenProvider>('TokenProvider');

@@ -1,5 +1,6 @@
 import { container } from '$lib/core/di/container';
 import {
+    type InjectOptions,
     isClassProvider,
     isFactoryProvider,
     isValueProvider,
@@ -32,9 +33,30 @@ export async function provide(providers: Provider<unknown>[]): Promise<void> {
 }
 
 export function inject<TType extends Type>(type: TType): InstanceType<TType>;
+
+export function inject<TType extends Type>(type: TType, options?: InjectOptions & { optional?: false }): InstanceType<TType>;
+
+export function inject<TType extends Type>(type: TType, options?: InjectOptions): InstanceType<TType> | null;
+
 export function inject<TValue>(token: InjectionToken<TValue>): TValue;
-export function inject<TType extends Type, TValue>(type: TType | InjectionToken<TValue>): InstanceType<TType> | TValue {
-    return container.get(type) as InstanceType<TType> | TValue;
+
+export function inject<TValue>(token: InjectionToken<TValue>, options?: InjectOptions & { optional?: false }): TValue;
+
+export function inject<TValue>(token: InjectionToken<TValue>, options?: InjectOptions): TValue | null;
+
+export function inject<TType extends Type, TValue>(
+    type: TType | InjectionToken<TValue>,
+    options?: InjectOptions,
+): InstanceType<TType> | TValue | null {
+    const value = container.get(type) as InstanceType<TType> | TValue;
+
+    if (value === undefined && !(options?.optional ?? false)) {
+        const name = type instanceof InjectionToken ? type.name : type.constructor.name;
+
+        throw new Error(`No provider for ${name}`);
+    }
+
+    return value ?? null;
 }
 
 function getProvision(provider: Provider<unknown>): Provision<unknown> {

@@ -30,3 +30,7 @@ export function isFactoryProvider<TProvider>(provider: Provider<TProvider>): pro
 }
 
 export type Provider<TProvider> = ValueProvider<TProvider> | ClassProvider<TProvider> | FactoryProvider<TProvider>;
+
+export type InjectOptions = Partial<{
+    optional: boolean;
+}>;
