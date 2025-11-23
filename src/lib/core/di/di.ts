@@ -7,7 +7,7 @@ import {
     type Provider,
     type Provision,
 } from '$lib/core/di/di.types';
-import type { InjectionToken } from '$lib/core/di/injection-token';
+import { InjectionToken } from '$lib/core/di/injection-token';
 import type { Type } from '$lib/utils/types';
 import { isAsyncInitializable } from './init';
 
@@ -51,7 +51,7 @@ export function inject<TType extends Type, TValue>(
     const value = container.get(type) as InstanceType<TType> | TValue;
 
     if (value === undefined && !(options?.optional ?? false)) {
-        const name = type instanceof InjectionToken ? type.name : type.constructor.name;
+        const name = type instanceof InjectionToken ? type.name : type.name;
 
         throw new Error(`No provider for ${name}`);
     }
