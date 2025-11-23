@@ -31,4 +31,5 @@ export class VideoInfoService {
 
         return info;
     }
+
 }

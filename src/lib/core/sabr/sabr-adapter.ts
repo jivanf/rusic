@@ -4,6 +4,7 @@ import { PlayerState } from '$lib/core/player';
 import { ShakaPlayerAdapter } from '$lib/core/player/shaka';
 import { VideoInfoService } from '$lib/core/services/video';
 import { InnertubeState } from '$lib/core/state/innertube';
+import { PlaybackConfigurationState } from '$lib/core/state/playback-configuration';
 import { SabrStreamingAdapter } from 'googlevideo/sabr-streaming-adapter';
 import { buildSabrFormat } from 'googlevideo/utils';
 import { Constants, YT } from 'youtubei.js/web';
@@ -17,12 +18,10 @@ export class SabrAdapter {
 
     private playbackWebPoToken?: string;
 
+    private readonly playbackConfiguration = inject(PlaybackConfigurationState);
     private readonly videoInfoService = inject(VideoInfoService);
-
     private readonly player = inject(PlayerState).player;
-
     private readonly innertube = inject(InnertubeState).innertube;
-
     private readonly botGuardService = inject(BotGuardService);
 
     constructor() {}
@@ -51,6 +50,16 @@ export class SabrAdapter {
         this.init();
     }
 
+    async configurePlayback(videoId: string, videoInfo?: YT.VideoInfo): Promise<void> {
+        videoInfo ??= await this.videoInfoService.getInfo(videoId);
+
+        this.refresh();
+
+        this.configureListeners(videoId);
+
+        return this.configureStreaming(videoInfo);
+    }
+
     configureListeners(videoId: string): void {
         this.streamingAdapter.onMintPoToken(async () => {
             if (!this.playbackWebPoToken) {
@@ -72,9 +81,7 @@ export class SabrAdapter {
             throw new Error("Couldn't find streaming data");
         }
 
-        this.streamingAdapter.setStreamingURL(
-            await this.innertube.session.player!.decipher(videoInfo.streaming_data?.server_abr_streaming_url),
-        );
+        this.streamingAdapter.setStreamingURL(await this.getStreamingUrl(videoInfo));
 
         this.streamingAdapter.setUstreamerConfig(
             videoInfo.player_config?.media_common_config.media_ustreamer_request_config
@@ -86,6 +93,14 @@ export class SabrAdapter {
 
     attach(): void {
         this.streamingAdapter.attach(this.player);
+    }
+
+    async getStreamingUrl(videoInfo: YT.VideoInfo): Promise<string> {
+        return (
+            await this.playbackConfiguration.getConfiguration(videoInfo.basic_info.id!, () =>
+                this.decipherSabrUrl(videoInfo),
+            )
+        ).streamingUrl!;
     }
 
     private async mintContentWebPo(binding: string): Promise<void> {
@@ -103,10 +118,20 @@ export class SabrAdapter {
             }
 
             if (this.botGuardService.integrityTokenBasedMinter) {
-                this.playbackWebPoToken = await this.botGuardService.integrityTokenBasedMinter.mintAsWebsafeString(decodeURIComponent(binding));
+                this.playbackWebPoToken = await this.botGuardService.integrityTokenBasedMinter.mintAsWebsafeString(
+                    decodeURIComponent(binding),
+                );
             }
         } finally {
             this.tokenCreationLock = false;
         }
+    }
+
+    private async decipherSabrUrl(videoInfo: YT.VideoInfo): Promise<string> {
+        const url = await this.innertube.session.player!.decipher(videoInfo.streaming_data?.server_abr_streaming_url);
+
+        this.playbackConfiguration.setConfiguration(videoInfo.basic_info.id!, { streamingUrl: url });
+
+        return url;
     }
 }

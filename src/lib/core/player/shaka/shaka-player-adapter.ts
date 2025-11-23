@@ -320,6 +320,7 @@ export class ShakaPlayerAdapter implements SabrPlayerAdapter {
                 arrayBuffer
             });
         } catch (error) {
+            console.debug(error);
             if (abortStatus.canceled) {
                 throw new shaka.util.Error(
                     shaka.util.Error.Severity.RECOVERABLE,
@@ -395,6 +396,7 @@ export class ShakaPlayerAdapter implements SabrPlayerAdapter {
             return;
 
         this.requestFilter = async (type, request, context) => {
+            console.debug(request.uris);
             if (type !== shaka.net.NetworkingEngine.RequestType.SEGMENT || !isGoogleVideoURL(request.uris[0])) return;
 
             const modifiedRequest = await interceptor({

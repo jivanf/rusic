@@ -4,7 +4,7 @@ import { StatefulService } from '$lib/core/services/stateful-service.svelte';
 import type { AsyncInitializable } from '$lib/core/di/init.ts';
 
 export class PlaylistService extends StatefulService<Playlist> implements AsyncInitializable {
-    private accessToken = PUBLIC_AUTH_ACCESS_TOKEN;
+    private readonly accessToken = PUBLIC_AUTH_ACCESS_TOKEN;
 
     init(): Promise<unknown> {
         return this.read();

@@ -1,14 +1,11 @@
-import type { AsyncInitializable } from '$lib/core/di/init';
 import shaka from 'shaka-player/dist/shaka-player.ui.debug';
 
-export class PlayerState implements AsyncInitializable {
+export class PlayerState {
     public readonly player: shaka.Player;
 
-    private readonly audio: HTMLAudioElement;
+    private audio!: HTMLAudioElement;
 
     constructor() {
-        this.audio = document.getElementById('audio') as HTMLAudioElement;
-
         shaka.polyfill.installAll();
 
         this.player = new shaka.Player();
@@ -20,9 +17,17 @@ export class PlayerState implements AsyncInitializable {
                 rebufferingGoal: 2,
             },
         });
-    }
 
-    async init(): Promise<unknown> {
-        return this.player.attach(this.audio);
+        const observer = new MutationObserver(() => {
+            const audio = document.getElementById('audio') as HTMLAudioElement | null;
+
+            if (audio !== null) {
+                this.audio = audio;
+
+                this.player.attach(audio).then(() => observer.disconnect());
+            }
+        });
+
+        observer.observe(document, { attributes: false, childList: true, characterData: false, subtree: true });
     }
 }

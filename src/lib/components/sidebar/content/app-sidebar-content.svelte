@@ -1,19 +1,18 @@
 <script lang="ts">
-    import type { SidebarItem } from '$lib/components/sidebar/app-sidebar.types';
     import { Menu, MenuButton, MenuItem } from '$lib/components/ui/sidebar';
     import { inject } from '$lib/core/di';
     import { PlaylistService } from '$lib/core/services/playlist';
+    import type { SidebarItem } from '$lib/components/sidebar/app-sidebar.types';
+    import { resolve } from '$app/paths';
 
     const playlistService = inject(PlaylistService);
 
-    let items = $state<SidebarItem[]>([]);
-
-    playlistService.read().then((playlists) => {
-        items = playlists.map((playlist) => ({
-            title: playlist.title,
-            route: '#',
-        }));
-    });
+    let items = $state<SidebarItem[]>(
+        playlistService.items.map((playlist) => ({
+            title: playlist.snippet.title,
+            route: resolve('/playlists/[id]', { id: playlist.id }),
+        })),
+    );
 </script>
 
 <Menu>
